@@ -1,30 +1,31 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import storage.ChatHistoryStore;
 
 public class ChatServer {
-    private static Set<ClientHandler> s1 = new HashSet<>();
+
+    private static Map<String, ClientHandler> users =
+            Collections.synchronizedMap(new HashMap<>());
 
     public static void main(String[] args) throws IOException {
         ServerSocket serverSocket = new ServerSocket(5000);
-        System.out.println("Server started on port 5000...");
+        System.out.println("Server running on port 5000...");
 
         while (true) {
             Socket socket = serverSocket.accept();
-            System.out.println("New client connected: " + socket);
-            ClientHandler handler = new ClientHandler(socket);
-            s1.add(handler);
-            handler.start();
+            new ClientHandler(socket).start();
         }
     }
 
     static class ClientHandler extends Thread {
+
         private Socket socket;
         private BufferedReader in;
         private PrintWriter out;
         private String userName;
 
-        public ClientHandler(Socket socket) {
+        ClientHandler(Socket socket) {
             this.socket = socket;
         }
 
@@ -33,35 +34,67 @@ public class ChatServer {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 out = new PrintWriter(socket.getOutputStream(), true);
 
-                // here we read data form user for username
+                // username
                 userName = in.readLine();
-                System.out.println(userName + " joined the chat.");
-                broadcast(userName + " joined the chat!", this);
+                users.put(userName, this);
+                System.out.println(userName + " connected");
 
-                String message;
-                while ((message = in.readLine()) != null) {
-                    if (message.equalsIgnoreCase("exit")) {
-                        break;
+                // broadcast user list
+                broadcastUserList();
+
+                String line;
+                while ((line = in.readLine()) != null) {
+
+                    if (line.startsWith("TO:")) {
+                        handlePrivateMessage(line);
                     }
-                    System.out.println(userName + ": " + message);
-                    broadcast(userName + ": " + message, this);
                 }
-            } catch (IOException e) {
+
+            } catch (Exception e) {
                 System.out.println("Error: " + e.getMessage());
             } finally {
-                try {
-                    socket.close();
-                } catch (IOException ignored) {}
-                s1.remove(this);
-                broadcast(userName + " left the chat.", this);
-                System.out.println(userName + " disconnected.");
+                users.remove(userName);
+                broadcastUserList();
+                try { socket.close(); } catch (IOException ignored) {}
+                System.out.println(userName + " disconnected");
             }
         }
 
-        private void broadcast(String message, ClientHandler excludeUser) {
-            for (ClientHandler client : s1) {
-                if (client != excludeUser) {
-                    client.out.println(message);
+        private void handlePrivateMessage(String data) {
+            try {
+                String[] parts = data.split("\\|");
+                String receiver = parts[0].substring(3);
+                String message = parts[1].substring(4);
+
+                // save chat
+                ChatHistoryStore.save(userName, receiver, message);
+
+                // send to receiver if online
+                ClientHandler rc = users.get(receiver);
+                if (rc != null) {
+                    rc.out.println(userName + ": " + message);
+                }
+
+                // send to self
+                out.println("Me: " + message);
+
+            } catch (Exception e) {
+                out.println("Invalid message format");
+            }
+        }
+
+        private void broadcastUserList() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("USER_LIST:");
+            synchronized (users) {
+                for (String u : users.keySet()) {
+                    sb.append(u).append(",");
+                }
+            }
+            String listMessage = sb.toString();
+            synchronized (users) {
+                for (ClientHandler c : users.values()) {
+                    c.out.println(listMessage);
                 }
             }
         }
