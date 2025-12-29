@@ -3,17 +3,17 @@ import java.net.*;
 import java.util.*;
 import storage.ChatHistoryStore;
 
-public class ChatServer {
+public class Server {
 
     private static Map<String, ClientHandler> users =
             Collections.synchronizedMap(new HashMap<>());
 
     public static void main(String[] args) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(5000);
+        ServerSocket ss = new ServerSocket(5000);
         System.out.println("Server running on port 5000...");
 
         while (true) {
-            Socket socket = serverSocket.accept();
+            Socket socket = ss.accept();
             new ClientHandler(socket).start();
         }
     }
