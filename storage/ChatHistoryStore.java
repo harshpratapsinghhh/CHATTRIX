@@ -31,20 +31,23 @@ public class ChatHistoryStore {
     }
 
     // Updated load method to return chat as String
-    public static synchronized String load(String u1, String u2) {
-        StringBuilder chat = new StringBuilder();
+    public static synchronized java.util.List<String> load(String u1, String u2) {
+
+        java.util.List<String> list = new java.util.ArrayList<>();
         String file = BASE_DIR + getFileName(u1, u2);
+
         File f = new File(file);
-        if (!f.exists()) return "";
+        if (!f.exists()) return list;
 
         try (BufferedReader br = new BufferedReader(new FileReader(f))) {
             String line;
             while ((line = br.readLine()) != null) {
-                chat.append(line).append("\n");
+                list.add(line);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return chat.toString();
+
+        return list;
     }
 }
