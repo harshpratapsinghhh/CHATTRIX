@@ -5,9 +5,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import storage.ChatHistoryStore;
-
-public class ChatClient extends JFrame {
+public class User1 extends JFrame {
 
     private JList<String> userList;
     private DefaultListModel<String> userListModel;
@@ -26,7 +24,7 @@ public class ChatClient extends JFrame {
     // chat memory per user
     private Map<String, java.util.List<String>> chatMap = new HashMap<>();
 
-    public ChatClient(String serverAddress, int port) {
+    public User1(String serverAddress, int port) {
 
         setTitle("CHATTRIX");
         setSize(700, 500);
@@ -184,7 +182,7 @@ public class ChatClient extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() ->
-                new ChatClient("localhost", 5000).setVisible(true)
+                new User1("localhost", 5000).setVisible(true)
         );
     }
 }
