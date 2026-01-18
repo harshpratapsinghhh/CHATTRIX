@@ -66,7 +66,7 @@ public class Server {
                 String receiver = parts[0].substring(3);
                 String message = parts[1].substring(4);
 
-                // save chat
+                // saves chat
                 ChatHistoryStore.save(userName, receiver, message);
 
                 // send to receiver if online
@@ -75,7 +75,7 @@ public class Server {
                     rc.out.println(userName + ": " + message);
                 }
 
-                // send to self
+                // senders way
                 out.println("Me: " + message);
 
             } catch (Exception e) {
